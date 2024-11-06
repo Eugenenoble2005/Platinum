@@ -1,5 +1,6 @@
 Carthage
 /Targets
+/dist
 */**/Debug
 xcuserdata
 *.xcworkspace

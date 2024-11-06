@@ -143,7 +143,8 @@ def Application(name, dir, deps, install = False):
 
     # copy to Targets folder
     if install is True:
-        inst = env.Install(dir=env.GetBuildPath('#/Targets/'+env['target']+'/'+env['build_config']), source=prog)
+        #inst = env.Install(dir=env.GetBuildPath('#/Targets/'+env['target']+'/'+env['build_config']), source=prog)
+        inst = env.Install(dir=env.GetBuildPath("#/dist"),source=prog)
         if env['build_config'] == 'Release' and 'STRIP' in env:
             env.AddPostAction(inst, env['STRIP']+' $TARGETS');
 
@@ -258,20 +259,9 @@ LibraryModule(name               = 'PltMediaConnect',
               excluded_files	 = ['MACFromIP.cpp'],
               source_root        = 'Source/Devices')
 
-for app in ['MicroMediaController', 'MediaCrawler', 'MediaConnect', 'FrameStreamer']:
-    Application(name    = app,
-                dir     = 'Source/Apps/' + app,
-                deps    = ['Platinum', 'PltMediaServer', 'PltMediaRenderer', 'PltMediaConnect'],
-              	install = True)
 
-for test in ['FileMediaServer', 'MediaRenderer', 'LightSample', 'Http', 'Time']:
-    Application(name    = test+'Test',
-                dir     = 'Source/Tests/' + test,
-                deps    = ['Platinum', 'PltMediaServer', 'PltMediaRenderer', 'PltMediaConnect'],
-              	install = True)
+Application(name    = 'tinyupnp',
+            dir     = 'Source/Tests/' + "FileMediaServer",
+            deps    = ['Platinum', 'PltMediaServer', 'PltMediaRenderer', 'PltMediaConnect'],
+            install = True)
 
-for tool in ['TextToHeader']:
-    Application(name    = tool,
-                dir     = 'Source/Tools/' + tool,
-                deps    = ['Platinum'],
-             	install = True)

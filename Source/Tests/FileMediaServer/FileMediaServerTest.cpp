@@ -38,20 +38,9 @@
 +---------------------------------------------------------------------*/
 #include "PltUPnP.h"
 #include "PltFileMediaServer.h"
-
 #include <stdlib.h>
 
 NPT_SET_LOCAL_LOGGER("platinum.media.server.file.test")
-
-/*----------------------------------------------------------------------
-|   globals
-+---------------------------------------------------------------------*/
-struct Options {
-    const char* path;
-    const char* friendly_name;
-    const char* guid;
-    NPT_UInt32  port;
-} Options;
 
 /*----------------------------------------------------------------------
 |   PrintUsageAndExit
@@ -59,50 +48,9 @@ struct Options {
 static void
 PrintUsageAndExit()
 {
-    fprintf(stderr, "usage: FileMediaServerTest [-f <friendly_name>] [-p <port>] [-g <guid>] <path>\n");
-    fprintf(stderr, "-f : optional upnp device friendly name\n");
-    fprintf(stderr, "-p : optional http port\n");
-    fprintf(stderr, "<path> : local path to serve\n");
+    fprintf(stderr, "usage: tinyupnp  <path>\n");
+    fprintf(stderr, "<path> : Local path to serve. Leave blank to serve current working directory \n");
     exit(1);
-}
-
-/*----------------------------------------------------------------------
-|   ParseCommandLine
-+---------------------------------------------------------------------*/
-static void
-ParseCommandLine(char** args)
-{
-    const char* arg;
-
-    /* default values */
-    Options.path     = NULL;
-    Options.friendly_name = NULL;
-    Options.guid = NULL;
-    Options.port = 0;
-
-    while ((arg = *args++)) {
-        if (!strcmp(arg, "-f")) {
-            Options.friendly_name = *args++;
-        } else if (!strcmp(arg, "-g")) {
-            Options.guid = *args++;
-        } else if (!strcmp(arg, "-p")) {
-            if (NPT_FAILED(NPT_ParseInteger32(*args++, Options.port))) {
-                fprintf(stderr, "ERROR: invalid argument\n");
-                PrintUsageAndExit();
-            }
-        } else if (Options.path == NULL) {
-            Options.path = arg;
-        } else {
-            fprintf(stderr, "ERROR: too many arguments\n");
-            PrintUsageAndExit();
-        }
-    }
-
-    /* check args */
-    if (Options.path == NULL) {
-        fprintf(stderr, "ERROR: path missing\n");
-        PrintUsageAndExit();
-    }
 }
 
 /*----------------------------------------------------------------------
@@ -115,31 +63,30 @@ main(int /* argc */, char** argv)
     NPT_LogManager::GetDefault().Configure("plist:.level=FINE;.handlers=ConsoleHandler;.ConsoleHandler.colors=off;.ConsoleHandler.filter=56");
 
     /* parse command line */
-    ParseCommandLine(argv+1);
-
+    char * provided_path = argv[1];
+    const char * true_path = provided_path == nullptr ? "." : provided_path;     
     /* for faster DLNA faster testing */
     PLT_Constants::GetInstance().SetDefaultDeviceLease(NPT_TimeInterval(60.));
-    
     PLT_UPnP upnp;
-    PLT_DeviceHostReference device(
+       PLT_DeviceHostReference device(
         new PLT_FileMediaServer(
-            Options.path, 
-            Options.friendly_name?Options.friendly_name:"Platinum UPnP Media Server",
+            true_path, 
+            "TinyUPnP Media Server",
             false,
-            Options.guid, // NULL for random ID
-            (NPT_UInt16)Options.port)
+            NULL, // NULL for random ID
+            (NPT_UInt16)0)
             );
 
     NPT_List<NPT_IpAddress> list;
     NPT_CHECK_SEVERE(PLT_UPnPMessageHelper::GetIPAddresses(list));
     NPT_String ip = list.GetFirstItem()->ToString();
 
-    device->m_ModelDescription = "Platinum File Media Server";
-    device->m_ModelURL = "http://www.plutinosoft.com/";
+    device->m_ModelDescription = "TinyUPnP";
+    device->m_ModelURL = "http://www.github.com/eugenenoble2005/tinyupnp.git";
     device->m_ModelNumber = "1.0";
-    device->m_ModelName = "Platinum File Media Server";
-    device->m_Manufacturer = "Plutinosoft";
-    device->m_ManufacturerURL = "http://www.plutinosoft.com/";
+    device->m_ModelName = "TinyUPnp Media Server";
+    device->m_Manufacturer = "Noble Eugene";
+    device->m_ManufacturerURL = "https://www.github.com/eugenenoble2005/tinyupnp.git";
 
     upnp.AddDevice(device);
     NPT_String uuid = device->GetUUID();
