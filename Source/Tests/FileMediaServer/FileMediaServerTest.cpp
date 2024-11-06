@@ -38,7 +38,12 @@
 +---------------------------------------------------------------------*/
 #include "PltUPnP.h"
 #include "PltFileMediaServer.h"
+#include <atomic>
+#include <chrono>
+#include <csignal>
+#include <cstdio>
 #include <stdlib.h>
+#include <thread>
 
 NPT_SET_LOCAL_LOGGER("platinum.media.server.file.test")
 
@@ -56,11 +61,15 @@ PrintUsageAndExit()
 /*----------------------------------------------------------------------
 |   main
 +---------------------------------------------------------------------*/
-int
-main(int /* argc */, char** argv)
+std::atomic<bool> keepRunning = true; 
+void signal_handler(int signal){
+    if(signal == SIGINT || signal == SIGTERM){
+        keepRunning = false;
+    }
+}int main(int /* argc */, char** argv)
 {
     // setup Neptune logging
-    NPT_LogManager::GetDefault().Configure("plist:.level=FINE;.handlers=ConsoleHandler;.ConsoleHandler.colors=off;.ConsoleHandler.filter=56");
+    //NPT_LogManager::GetDefault().Configure("plist:.level=FINE;.handlers=ConsoleHandler;.ConsoleHandler.colors=off;.ConsoleHandler.filter=56");
 
     /* parse command line */
     char * provided_path = argv[1];
@@ -90,18 +99,19 @@ main(int /* argc */, char** argv)
 
     upnp.AddDevice(device);
     NPT_String uuid = device->GetUUID();
-
+    fprintf(stdout, "Starting Server \r\n");
     NPT_CHECK_SEVERE(upnp.Start());
-    NPT_LOG_INFO("Press 'q' to quit.");
-
+    fprintf(stdout, "Server Running. \r\n");
     char buf[256];
-    while (true) {
-        fgets(buf, 256, stdin);
-        if (*buf == 'q')
-            break;
+
+    std::signal(SIGINT,signal_handler);   
+    
+     while (keepRunning) {     
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
+    fprintf(stdout, "Killing Server" );
     upnp.Stop();
-
+    fprintf(stdout, "Server Killed. Bye Bye \r\n");
     return 0;
 }
